@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cato Style Cloud Gaming</title>
+
+  <!-- ======================================================= -->
+  <!-- 1. CSS (ESTILOS VISUAIS DO APLICATIVO)                   -->
+  <!-- ======================================================= -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #0b0f19;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Cabecalho */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Badge do tempo (500m) */
+    .time-badge {
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      color: #fde047;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    /* Catálogo de jogos */
+    main { padding: 20px; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .game-card {
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .game-cover {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: #0f172a;
+    }
+
+    .game-info { padding: 10px; }
+
+    .game-title {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .play-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: 8px 0;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Modal da Fila */
+    #queue-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 90;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #queue-modal.active { display: flex; }
+
+    .queue-box {
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .queue-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+    
+    .queue-number {
+      font-size: 42px;
+      font-weight: 800;
+      color: #3b82f6;
+      margin: 10px 0;
+    }
+
+    .queue-info { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+
+    .btn-cancel {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #f87171;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    /* Modal do Streaming (Tela de Jogo) */
+    #stream-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #stream-modal.active { display: flex; }
+    video { width: 100%; height: 100%; object-fit: contain; }
+
+    .controls-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .in-game-header { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; pointer-events: auto; z-index: 10; }
+    .game-timer { background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 20px; color: #fde047; font-weight: bold; font-size: 13px; }
+    .btn-exit { background: rgba(239, 68, 68, 0.85); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================= -->
+  <!-- 2. HTML (ESTRUTURA E CONTEÚDO DA TELA)                   -->
+  <!-- ======================================================= -->
+  <header>
+    <div class="logo">MY CLOUD</div>
+    <div class="time-badge">⏱️ <span id="menu-time">8h 20m</span></div>
+  </header>
+
+  <main>
+    <div class="section-title">Jogos Disponíveis</div>
+    <div class="games-grid">
+      <div class="game-card">
+        <img class="game-cover" src="https://via.placeholder.com/150x200/1e293b/ffffff?text=GTA+V" alt="GTA V">
+        <div class="game-info">
+          <div class="game-title">GTA V</div>
+          <button class="play-btn" onclick="solicitarEntradaJogo('GTA V')">JOGAR</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal da Fila -->
+  <div id="queue-modal">
+    <div class="queue-box">
+      <div class="queue-title">Servidores Ocupados</div>
+      <div>Sua posição na fila:</div>
+      <div class="queue-number" id="queue-position">5</div>
+      <div class="queue-info">Aguarde, conectando automaticamente...</div>
+      <button class="btn-cancel" onclick="cancelarFila()">Cancelar Fila</button>
+    </div>
+  </div>
+
+  <!-- Modal de Transmissao -->
+  <div id="stream-modal">
+    <video id="game-video" autoplay playsinline muted></video>
+
+    <div class="controls-overlay">
+      <div class="in-game-header">
+        <div class="game-timer">Tempo: <span id="game-time">8h 20m</span></div>
+        <button class="btn-exit" onclick="fecharJogo()">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 3. JAVASCRIPT (LÓGICA E INTERAÇÃO)                      -->
+  <!-- ======================================================= -->
+  <script>
+    // Limite definido para 500 minutos
+    let tempoRestanteSegundos = 500 * 60; 
+    let posicaoFila = 5;
+    let queueInterval = null;
+    let timerLoop = null;
+    let pc = null;
+
+    const menuTimeEl = document.getElementById('menu-time');
+    const gameTimeEl = document.getElementById('game-time');
+    const queueModal = document.getElementById('queue-modal');
+    const queuePosEl = document.getElementById('queue-position');
+    const streamModal = document.getElementById('stream-modal');
+    const video = document.getElementById('game-video');
+
+    function formatarTempo(segundos) {
+      const h = Math.floor(segundos / 3600);
+      const m = Math.floor((segundos % 3600) / 60);
+      const s = segundos % 60;
+      if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m`;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Exibe o tempo inicial
+    menuTimeEl.innerText = formatarTempo(tempoRestanteSegundos);
+
+    function solicitarEntradaJogo(nomeJogo) {
+      if (tempoRestanteSegundos <= 0) {
+        alert("Seu tempo acabou!");
+        return;
+      }
+
+      queueModal.classList.add('active');
+      posicaoFila = 5;
+      queuePosEl.innerText = posicaoFila;
+
+      queueInterval = setInterval(() => {
+        posicaoFila--;
+        queuePosEl.innerText = posicaoFila;
+
+        if (posicaoFila <= 0) {
+          clearInterval(queueInterval);
+          queueModal.classList.remove('active');
+          iniciarJogo(nomeJogo);
+        }
+      }, 2000);
+    }
+
+    function cancelarFila() {
+      if (queueInterval) clearInterval(queueInterval);
+      queueModal.classList.remove('active');
+    }
+
+    function iniciarJogo(nomeJogo) {
+      streamModal.classList.add('active');
+
+      timerLoop = setInterval(() => {
+        tempoRestanteSegundos--;
+        const tempoFmt = formatarTempo(tempoRestanteSegundos);
+        menuTimeEl.innerText = tempoFmt;
+        gameTimeEl.innerText = tempoFmt;
+
+        if (tempoRestanteSegundos <= 0) {
+          clearInterval(timerLoop);
+          alert("Seu tempo esgotou!");
+          fecharJogo();
+        }
+      }, 1000);
+
+      // Conexao WebRTC
+      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+      pc.ontrack = (e) => {
+        if (video.srcObject !== e.streams[0]) video.srcObject = e.streams[0];
+      };
+    }
+
+    function fecharJogo() {
+      if (timerLoop) clearInterval(timerLoop);
+      if (pc) { pc.close(); pc = null; }
+      streamModal.classList.remove('active');
+    }
+  </script>
+</body>
+</html>
